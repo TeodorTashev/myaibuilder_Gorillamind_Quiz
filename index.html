@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Mobile Optimization -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personalized Supplement Quiz - Gorilla Mind</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS: Ideally, this would be moved to an external file -->
+  <style>
+    /* Wrapper for side images and main container */
+    .quiz-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      padding: 20px;
+    }
+    .side-image {
+      flex: 0 0 auto;
+      margin: 0 20px;
+    }
+    .side-image img {
+      max-width: 150px;
+      width: 100%;
+    }
+    /* Hide side images on mobile */
+    @media (max-width: 768px) {
+      .side-image { display: none; }
+    }
+    
+    /* Global Styles & Mobile Responsiveness */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f5f0ff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #2a2a2a;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2.5em auto;
+      padding: 3em;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container:hover { transform: translateY(-3px); }
+    .quiz-content { width: 100%; }
+    .header { text-align: center; margin-bottom: 1em; }
+    h1 { font-size: 2.2em; font-weight: 700; color: #ff6200; margin-bottom: 0.3em; }
+    h1.subtitle { font-size: 1.6em; font-weight: 400; color: #4a00e0; }
+    
+    /* Step Indicator */
+    #stepIndicator {
+      font-size: 1.1em;
+      margin-bottom: 1em;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    /* Fieldset & Transitions */
+    fieldset {
+      border: none;
+      margin-bottom: 2em;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+    fieldset.active { opacity: 1; }
+    legend { font-weight: 600; color: #ff6200; font-size: 1.3em; padding-bottom: 0.6em; }
+    label { display: block; margin: 1.2em 0 0.4em; font-size: 1.1em; color: #3c3c3c; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.9em;
+      border: 1px solid #d1d1d1;
+      border-radius: 8px;
+      background: #fff;
+      color: #2a2a2a;
+      font-size: 1em;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #ff6200;
+      box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.25);
+      outline: none;
+    }
+    .invalid { border-color: red; }
+    .error-message {
+      color: red;
+      font-size: 0.9em;
+      margin-top: 0.3em;
+    }
+    .error-message.hidden { display: none; }
+    
+    .training-type-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+    }
+    .training-type-options label {
+      display: flex;
+      align-items: center;
+      font-size: 1.1em;
+      margin: 0;
+      cursor: pointer;
+    }
+    .training-type-options input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      accent-color: #4a00e0;
+    }
+    .hidden { display: none; }
+    
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2em;
+    }
+    .step-btn {
+      background: #ff6200;
+      color: white;
+      padding: 1em 2em;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .step-btn:hover { background: #e55a00; transform: translateY(-2px); }
+    .step-btn:disabled { background: #b0bec5; cursor: not-allowed; transform: none; }
+    
+    /* Final Step & Recommendations */
+    #step-8 { text-align: left; font-size: 1.1em; font-weight: 600; color: #2e7d32; }
+    .recommendation { margin-bottom: 2em; }
+    .recommendation img { display: block; max-width: 200px; height: auto; margin: 1em 0; }
+    .recommendation a { color: #4a00e0; text-decoration: none; font-weight: 600; }
+    .recommendation a:hover { text-decoration: underline; }
+    
+    /* Progress Bar with ARIA attributes */
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      margin-bottom: 2.5em;
+      overflow: hidden;
+    }
+    .progress {
+      height: 100%;
+      background: #ff6200;
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    
+    .loading { display: none; text-align: center; }
+    /* Spinner Animation */
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #ff6200;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .container { padding: 1.5em; }
+      h1 { font-size: 1.8em; }
+      h1.subtitle { font-size: 1.4em; }
+      .step-btn { padding: 0.8em 1.5em; font-size: 1em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-wrapper">
+    <div class="side-image left">
+      <img src="photos/gorilla left.png" alt="Gorilla Man Left">
+    </div>
+    <div class="container">
+      <div class="quiz-content">
+        <div class="header">
+          <h1>Gorilla Mind Supplement Quiz</h1>
+          <h1 class="subtitle">Tailored Recommendations for Your Goals</h1>
+        </div>
+        <!-- Step Indicator -->
+        <div id="stepIndicator" aria-live="polite">Step 1 of 8</div>
+        
+        <!-- Progress Bar with ARIA attributes -->
+        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress" id="progress"></div>
+        </div>
+        
+        <form id="quizForm">
+          <!-- Step 1: Training Routine -->
+          <fieldset id="step-1" class="step active">
+            <legend>Step 1: Training Routine</legend>
+            <label for="trainingRoutine">Do you follow a regular training/exercise routine?</label>
+            <select id="trainingRoutine" name="trainingRoutine" required>
+              <option value="">-- Select an option --</option>
+              <option value="yes">Yes</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="error-message hidden" id="error-trainingRoutine">Please select an option.</span>
+          </fieldset>
+  
+          <!-- Step 2: Training & Performance -->
+          <fieldset id="step-2" class="step hidden">
+            <legend>Step 2: Training & Performance</legend>
+            <label for="trainingFrequency">How many days per week do you train?</label>
+            <select id="trainingFrequency" name="trainingFrequency" required>
+              <option value="">-- Select --</option>
+              <option value="5-7">5-7 days</option>
+              <option value="3-4">3-4 days</option>
+              <option value="1-2">1-2 days</option>
+              <option value="0">0 (not currently training)</option>
+            </select>
+            <span class="error-message hidden" id="error-trainingFrequency">Please select an option.</span>
+            <label>What type of training do you do? (Select all that apply)</label>
+            <div class="training-type-options">
+              <label><input type="checkbox" name="trainingType" value="cardio"> Cardio</label>
+              <label><input type="checkbox" name="trainingType" value="strength"> Strength training</label>
+              <label><input type="checkbox" name="trainingType" value="endurance"> Endurance</label>
+              <label><input type="checkbox" name="trainingType" value="flexibility"> Flexibility</label>
+              <label><input type="checkbox" name="trainingType" value="sports"> Sports-specific</label>
+            </div>
+            <span class="error-message hidden" id="error-trainingType">Please select at least one training type.</span>
+            <div id="sportsSpecificSection" class="hidden">
+              <label for="sportsSpecific">What sport do you train for?</label>
+              <input type="text" id="sportsSpecific" name="sportsSpecific" placeholder="soccer, boxing...">
+              <span class="error-message hidden" id="error-sportsSpecific">Please specify your sport.</span>
+            </div>
+            <label for="performanceGoals">Any specific performance goals? (Optional)</label>
+            <input type="text" id="performanceGoals" name="performanceGoals" placeholder="run a marathon...">
+          </fieldset>
+  
+          <!-- Step 3: Recovery -->
+          <fieldset id="step-3" class="step hidden">
+            <legend>Step 3: Recovery</legend>
+            <label for="sleepHours">How many hours of sleep do you get on average per night?</label>
+            <select id="sleepHours" name="sleepHours" required>
+              <option value="">-- Select --</option>
+              <option value="<5">< 5 hours</option>
+              <option value="5-6">5-6 hours</option>
+              <option value="7-8">7-8 hours</option>
+              <option value=">8">> 8 hours</option>
+            </select>
+            <span class="error-message hidden" id="error-sleepHours">Please select an option.</span>
+            <label for="stressLevel">How would you rate your current stress level?</label>
+            <select id="stressLevel" name="stressLevel" required>
+              <option value="">-- Select --</option>
+              <option value="high">High</option>
+              <option value="moderate">Moderate</option>
+              <option value="low">Low</option>
+            </select>
+            <span class="error-message hidden" id="error-stressLevel">Please select an option.</span>
+            <label for="soreness">Do you often feel muscle soreness or fatigue?</label>
+            <select id="soreness" name="soreness" required>
+              <option value="">-- Select --</option>
+              <option value="yes">Yes, frequently</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="no">No, rarely</option>
+            </select>
+            <span class="error-message hidden" id="error-soreness">Please select an option.</span>
+          </fieldset>
+  
+          <!-- Step 4: Cognitive Health -->
+          <fieldset id="step-4" class="step hidden">
+            <legend>Step 4: Cognitive Health</legend>
+            <label for="cognitiveInterest">Interested in improving cognitive performance?</label>
+            <select id="cognitiveInterest" name="cognitiveInterest" required>
+              <option value="">-- Select --</option>
+              <option value="yes">Yes</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="error-message hidden" id="error-cognitiveInterest">Please select an option.</span>
+            <label for="cognitiveIssues">Do you experience cognitive issues?</label>
+            <select id="cognitiveIssues" name="cognitiveIssues" required>
+              <option value="">-- Select --</option>
+              <option value="yes">Yes, often</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="error-message hidden" id="error-cognitiveIssues">Please select an option.</span>
+            <label for="headImpact">Do you participate in sports where you might get hit in the head?</label>
+            <select id="headImpact" name="headImpact" required>
+              <option value="">-- Select --</option>
+              <option value="yes">Yes</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="error-message hidden" id="error-headImpact">Please select an option.</span>
+            <label for="currentNootropics">Current nootropics or cognitive supplements? (Optional)</label>
+            <input type="text" id="currentNootropics" name="currentNootropics" placeholder="coffee...">
+          </fieldset>
+  
+          <!-- Step 5: Aesthetic & Health Goals -->
+          <fieldset id="step-5" class="step hidden">
+            <legend>Step 5: Aesthetic & Health Goals</legend>
+            <label for="primaryGoal">What is your primary health/fitness goal?</label>
+            <select id="primaryGoal" name="primaryGoal" required>
+              <option value="">-- Select --</option>
+              <option value="build muscle">Build muscle</option>
+              <option value="lose fat">Lose weight/fat</option>
+              <option value="improve endurance">Improve endurance</option>
+              <option value="increase energy">Increase daily energy</option>
+              <option value="general health">Improve general health</option>
+              <option value="other">Other</option>
+            </select>
+            <span class="error-message hidden" id="error-primaryGoal">Please select an option.</span>
+            <label for="specificGoals">Specific goals or target metrics? (Optional)</label>
+            <input type="text" id="specificGoals" name="specificGoals" placeholder="lose 10 lbs...">
+            <label for="healthConcerns">Any health concerns?</label>
+            <input type="text" id="healthConcerns" name="healthConcerns" required placeholder="high blood pressure...">
+            <span class="error-message hidden" id="error-healthConcerns">Please enter a health concern.</span>
+          </fieldset>
+  
+          <!-- Step 6: Diet & Supplement Background -->
+          <fieldset id="step-6" class="step hidden">
+            <legend>Step 6: Diet & Supplement Background</legend>
+            <label for="dietType">Are you following any specific diet?</label>
+            <select id="dietType" name="dietType" required>
+              <option value="">-- Select --</option>
+              <option value="balanced">No specific diet (Balanced)</option>
+              <option value="high-protein">High protein</option>
+              <option value="low-carb">Low carb/Keto</option>
+              <option value="vegetarian">Vegetarian</option>
+              <option value="vegan">Vegan</option>
+              <option value="other">Other/Complex</option>
+            </select>
+            <span class="error-message hidden" id="error-dietType">Please select an option.</span>
+            <label for="currentSupplements">Current supplements? (Optional)</label>
+            <input type="text" id="currentSupplements" name="currentSupplements" placeholder="multivitamin...">
+            <label for="avoidSupplements">Supplements/ingredients to avoid? (Optional)</label>
+            <input type="text" id="avoidSupplements" name="avoidSupplements" placeholder="caffeine...">
+          </fieldset>
+  
+          <!-- Step 7: Contact Info -->
+          <fieldset id="step-7" class="step hidden">
+            <legend>Step 7: Contact Information</legend>
+            <label for="userName">Name</label>
+            <input type="text" id="userName" name="userName" required>
+            <span class="error-message hidden" id="error-userName">Please enter your name.</span>
+            <label for="userEmail">Email</label>
+            <input type="email" id="userEmail" name="userEmail" required>
+            <span class="error-message hidden" id="error-userEmail">Please enter a valid email.</span>
+          </fieldset>
+  
+          <!-- Step 8: Recommendations -->
+          <fieldset id="step-8" class="step hidden">
+            <legend>Step 8: Your Recommendations</legend>
+            <div id="recommendations" aria-live="polite"></div>
+            <div class="loading" id="loading">
+              <div class="spinner"></div>
+            </div>
+          </fieldset>
+        </form>
+        
+        <!-- Navigation Buttons; hidden on Step 8 -->
+        <div class="nav-buttons" id="navButtons">
+          <button type="button" id="prevBtn" class="step-btn" disabled>Previous</button>
+          <button type="button" id="actionBtn" class="step-btn" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+    <div class="side-image right">
+      <img src="photos/gorilla right.png" alt="Gorilla Man Right">
+    </div>
+  </div>
+  
+  <!-- JavaScript: Ideally, this would be moved to an external file -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      //place products here:)
+	  const products = [
+  { name: "GORILLA MODE", type: "Pre-Workout", effects: "Boosts energy, focus, strength, endurance, pumps", ingredients: "L-Citrulline (5000mg), Creatine (2500mg), Caffeine (200mg), L-Tyrosine (2500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Mode_60oz_OrangeRush_mockup_011024_4166d67b-d1a4-4fc1-84c4-8dd38832cfef.png?v=1737567062&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode?variant=42200569446445" },
+  { name: "GORILLA MODE NITRIC", type: "Stim-Free Pre-Workout", effects: "Increases pumps, endurance, strength, hydration", ingredients: "L-Citrulline (10,000mg), Creatine (5000mg), Glycerol (4000mg), Nitrates (1000mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mode-Nitric-WhiteGummyBear_fdc4ca2a-5110-4b7d-8aef-e2e4bc109c50.png?v=1743174672&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-nitric?variant=43362700001325" },
+  { name: "GORILLA MODE LIGHTNING", type: "High-Stim Pre-Workout", effects: "Extreme energy, focus, pumps, strength", ingredients: "Caffeine (high dose), L-Citrulline, Glycerol", imageUrl: "https://gorillamind.com/cdn/shop/files/Mode_Lightning_Bombsicle.png?v=1743912218&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-lightning?variant=42993191026733" },
+  { name: "GORILLA MODE BASE", type: "Basic Pre-Workout", effects: "Energy, focus, pumps, endurance", ingredients: "L-Citrulline (5000mg), Caffeine (200mg), L-Tyrosine (1500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/ModeBase-CherryBlackout-031824.png?v=1735235931&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-base?variant=42117287346221" },
+  { name: "SIGMA", type: "Testosterone Booster", effects: "Raises testosterone, reduces stress", ingredients: "Tongkat Ali, Ashwagandha (KSM-66)", imageUrl: "https://gorillamind.com/cdn/shop/files/V2-Sigma_1.png?v=1691683168&width=1445", productUrl: "https://gorillamind.com/products/sigma?variant=42945904246829" },
+  { name: "OMEGA-3 ELIXIR", type: "Fish Oil", effects: "Supports heart, brain, exercise performance", ingredients: "Omega-3s (2210mg), EPA, DHA, Astaxanthin", imageUrl: "https://gorillamind.com/cdn/shop/files/gorilla-omega-elixir.png?v=1722566329&width=1445", productUrl: "https://gorillamind.com/products/omega-3-elixir?variant=42946708144173" },
+  { name: "ELITE MULTIVITAMIN", type: "Multivitamin", effects: "Fills nutrient gaps, boosts energy, supports health", ingredients: "B Vitamins, Magnesium, Trace Minerals", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mind-Multi-Vitamin.png?v=1705311496&width=1445", productUrl: "https://gorillamind.com/products/elite-multivitamin?variant=42945804140589" },
+  { name: "GORILLA MODE PROTEIN", type: "Protein Powder", effects: "Builds muscle, aids recovery", ingredients: "Whey Isolate (25g protein), Lactase", imageUrl: "https://gorillamind.com/cdn/shop/files/GMProtein_ChocolatePeanutButterFront1028_2.png?v=1718641683&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-protein?variant=41648265920557" },
+  { name: "CREATINE MONOHYDRATE", type: "Creatine Supplement", effects: "Increases strength, muscle size", ingredients: "Creatine (5g)", imageUrl: "https://gorillamind.com/cdn/shop/files/GorillaMode_CreatinePowder100SCOOPS032425.png?v=1742847498&width=1445", productUrl: "https://gorillamind.com/products/creatine?variant=42385804558381" },
+  { name: "BETA-ALANINE", type: "Endurance Supplement", effects: "Boosts endurance, reduces fatigue", ingredients: "Beta-Alanine (3.2-6.4g)", imageUrl: "https://gorillamind.com/cdn/shop/files/GMBeta-Alanine032725.png?v=1743096123&width=1445", productUrl: "https://gorillamind.com/products/beta-alanine?variant=43064432132141" },
+  { name: "GORILLA DREAM", type: "Sleep Aid", effects: "Improves sleep, vivid dreams, recovery", ingredients: "Sleep and recovery blend", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Dream.png?v=1701812976&width=1445", productUrl: "https://gorillamind.com/products/gorilla-dream?variant=42945865187373" },
+  { name: "GORILLA MIND SMOOTH", type: "Stim-Free Nootropic", effects: "Enhances focus, memory, productivity", ingredients: "Stim-free nootropic blend", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mind-Smooth.png?v=1700471327&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mind-smooth?variant=42945873739821" },
+  { name: "GORILLA HYDRATION", type: "Electrolyte Mix", effects: "Hydrates, boosts performance", ingredients: "Sodium (750mg), Potassium, Iodine", imageUrl: "https://gorillamind.com/cdn/shop/files/Newest-Bombsicle.png?v=1720106397&width=1445", productUrl: "https://gorillamind.com/products/hydration?variant=41702188613677" },
+  { name: "GORILLA BAR", type: "Protein Bar", effects: "Builds muscle, curbs hunger", ingredients: "Whey Isolate (20g protein)", imageUrl: "https://gorillamind.com/cdn/shop/files/GorillaBar_BirthdayCake.png?v=1739607463&width=1445", productUrl: "https://gorillamind.com/products/gorilla-bar?variant=42796380651565" },
+  { name: "MASS GAINER", type: "Weight Gainer", effects: "Adds muscle mass, boosts recovery", ingredients: "Whey Protein (74g), Carbs (174g), Velositol", imageUrl: "https://gorillamind.com/cdn/shop/files/Peanut-Butter_eb4ae27c-a543-4b85-9caf-6df28b36455e.png?v=1715364104&width=1445", productUrl: "https://gorillamind.com/products/mass-gainer?variant=42536835383341" },
+  { name: "GORILLA MODE LIQUID GLYCEROL", type: "Hyper-Hydration", effects: "Enhances pumps, endurance, hydration", ingredients: "Glycerol (12.5g), Sea Salt", imageUrl: "https://gorillamind.com/cdn/shop/files/2-Liquid-Glycerol-Hero-Pump-_1_0fa7b102-fea1-4970-b60f-e2c1009c70e5.png?v=1717188806&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-liquid-glycerol?variant=42758615629869" },
+  { name: "COLLAGEN PEPTIDES", type: "Collagen Supplement", effects: "Supports skin, joints, sleep", ingredients: "Collagen (11g), Vitamin C (90mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Collagen-Blue-Raspberry.png?v=1703109889&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mind-collagen?variant=41696355909677" },
+  { name: "LIPOSOMAL MELATONIN", type: "Sleep Aid", effects: "Improves sleep quality", ingredients: "Melatonin (250mcg/pump)", imageUrl: "https://gorillamind.com/cdn/shop/files/LiposomalMelatoninFront.png?v=1699032589&width=1445", productUrl: "https://gorillamind.com/products/liposomal-melatonin?variant=43064422924333" },
+  { name: "TURK-PLEX®", type: "Muscle Builder", effects: "Increases muscle mass, strength", ingredients: "Ajuga Turkestanica (500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Turkesterone.png?v=1695235394&width=1445", productUrl: "https://gorillamind.com/products/turk-plex?variant=40257385758765" },
+  { name: "ECDY-PLEX®", type: "Muscle Builder", effects: "Boosts muscle growth, endurance", ingredients: "Ecdysterone (500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Ecdy-Plex_876ceab8-8015-4dd4-9fca-23f72ed1ba45.png?v=1695189954&width=1445", productUrl: "https://gorillamind.com/products/complexed-ecdysterone?variant=41632804634669" },
+  { name: "HMB", type: "Anti-Catabolic", effects: "Reduces muscle loss, enhances recovery", ingredients: "HMB (1-3g)", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-HMB.png?v=1722366675&width=1445", productUrl: "https://gorillamind.com/products/hmb?variant=42940013903917" },
+  { name: "HYDROPRIME® GLYCEROL", type: "Hyper-Hydration", effects: "Improves pumps, endurance, hydration", ingredients: "Glycerol (5-10g)", imageUrl: "https://gorillamind.com/cdn/shop/files/hydroprime.png?v=1706301876&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-hydroprime-glycerol?variant=43064428920877" },
+  { name: "GORILLA MIND CALM", type: "Stress Relief", effects: "Reduces stress, improves recovery", ingredients: "Cortisol modulator blend", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mind-Calm.png?v=1703874083&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mind-calm?variant=42940562014253" },
+  { name: "GORILLA MODE AR", type: "Testosterone Enhancer", effects: "Boosts testosterone use, fat loss", ingredients: "L-Carnitine L-Tartrate", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mode-AR.png?v=1701886993&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-ar?variant=42945797488685" },
+  { name: "ASTRAGALUS ROOT EXTRACT", type: "Health Support", effects: "Supports kidneys, immunity", ingredients: "Astragalus Extract", imageUrl: "https://gorillamind.com/cdn/shop/files/Astragalus1_c40fde67-99b9-4572-8793-c019f0617af8.png?v=1704747063&width=1445", productUrl: "https://gorillamind.com/products/astragalus?variant=42784922533933" },
+  { name: "GORILLA MODE NITRIC SAMPLE", type: "Stim-Free Pre-Workout", effects: "Boosts pumps, strength, endurance", ingredients: "L-Citrulline (5000mg), Creatine (2500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Tiger_sBlood.png?v=1726689771&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-nitric-to-go?variant=41931704139821" },
+  { name: "GORILLA MODE SAMPLE", type: "Pre-Workout Sample", effects: "Energy, focus, pumps", ingredients: "L-Citrulline (5000mg), Caffeine (200mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Orange-Rush.png?v=1726080519&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-samples?variant=43027641630765" },
+  { name: "LOCK & LOAD", type: "Volume Enhancer", effects: "Increases semen volume, libido", ingredients: "Sunflower Lecithin (3500mg), Pygeum (200mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Lock-and-Load-Render.png?v=1729529312&width=1445", productUrl: "https://gorillamind.com/products/lock-and-load?variant=42940448374829" },
+  { name: "CYCLEAN™ PM", type: "Fat Burner (Stim-Free)", effects: "Burns fat, suppresses appetite", ingredients: "MitoBurn, Paradoxine", imageUrl: "https://gorillamind.com/cdn/shop/files/CycleanPM.png?v=1739208846&width=1445", productUrl: "https://gorillamind.com/products/cyclean-pm?variant=42945835630637" },
+  { name: "GLUCOSE DISPOSAL AGENT", type: "Glucose Control", effects: "Manages blood sugar, supports muscle glycogen", ingredients: "Berberine (250mg), Bitter Melon (250mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Glucose-Disposal-Agent.png?v=1687931576&width=1445", productUrl: "https://gorillamind.com/products/glucose-disposal-agent?variant=42940573876269" },
+  { name: "GORILLA MODE EAAS", type: "Amino Acids", effects: "Builds muscle, speeds recovery", ingredients: "EAAs (12g)", imageUrl: "https://gorillamind.com/cdn/shop/files/EAAs-JungleJuice_9a6f588f-3c27-422e-b072-fcd7866d519e.png?v=1737744898&width=1445", productUrl: "https://gorillamind.com/products/eaas?variant=40718027784237" },
+  { name: "CURCUMIN", type: "Anti-Inflammatory", effects: "Reduces inflammation, supports joints", ingredients: "Curcumin C3 Complex", imageUrl: "https://gorillamind.com/cdn/shop/files/Curcumin.png?v=1704747090&width=1445", productUrl: "https://gorillamind.com/products/curcumin?variant=42945631223853" },
+  { name: "CITRUS BERGAMOT", type: "Lipid Support", effects: "Improves cholesterol, blood sugar", ingredients: "Citrus Bergamot", imageUrl: "https://gorillamind.com/cdn/shop/files/Citrus-Bergamot.png?v=1704747078&width=1445", productUrl: "https://gorillamind.com/products/citrus-bergamot?variant=42940591046701" },
+  { name: "APELYNE™", type: "Appetite Suppressant", effects: "Reduces hunger, promotes fullness", ingredients: "Water-absorbing blend", imageUrl: "https://gorillamind.com/cdn/shop/files/Apelyne-Front.png?v=1689613299&width=1445", productUrl: "https://gorillamind.com/products/apelyne?variant=42920850358317" },
+  { name: "BEEF LIVER CAPSULES", type: "Nutrient Support", effects: "Boosts overall health, fills nutrient gaps", ingredients: "Beef Liver", imageUrl: "https://gorillamind.com/cdn/shop/files/beef-liver-render.png?v=1720564631&width=1445", productUrl: "https://gorillamind.com/products/beef-liver?variant=42945772486701" },
+  { name: "GORILLA MODE INTRA", type: "Peri-Workout", effects: "Boosts endurance, recovery, pumps", ingredients: "Cluster Dextrin, Creatine, Taurine", imageUrl: "https://gorillamind.com/cdn/shop/files/GM_Intra_1028x1028_59d63950-d628-42e3-91d5-c2c3dff80b9c.png?v=1719260834&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode-intra?variant=42129448239149" },
+  { name: "GORILLA MIND RESPAWN", type: "Gaming Nootropic", effects: "Enhances focus, reaction time, energy", ingredients: "L-Tyrosine (5000mg), Caffeine (300mg), Alpha-GPC (800mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Respawn-Bombsicle-042224.png?v=1717537477&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mind-respawn?variant=41583487877165" },
+  { name: "CORTISOL BLOCKER (WITH EMODIN)", type: "Stress Relief", effects: "Lowers cortisol, improves recovery", ingredients: "Emodin", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mind-Calm_c9252445-eacc-48fc-bc6a-cf723eed5bb8.png?v=1735327479&width=1445", productUrl: "https://gorillamind.com/products/cortisol-blocker?variant=42945663270957" },
+  { name: "GORILLA MIND", type: "Nootropic", effects: "Boosts focus, energy, productivity", ingredients: "Stimulant nootropic blend", imageUrl: "https://gorillamind.com/cdn/shop/files/Gorilla-Mind.png?v=1700466711&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mind?variant=42945878491181" },
+  { name: "SEA MOSS ELIXIR", type: "Antioxidant Support", effects: "Supports immunity, thyroid, digestion", ingredients: "Sea Moss, Bladderwrack, Burdock", imageUrl: "https://gorillamind.com/cdn/shop/files/Sea-Moss-Front-060524.png?v=1734459811&width=1445", productUrl: "https://gorillamind.com/products/sea-moss-elixir?variant=43172322050093" }
+];
+
+
+
+      // Example: const products = [
+      //   { name: "GORILLA MODE", type: "Pre-Workout", effects: "Boosts energy, focus, strength, endurance, pumps", ingredients: "L-Citrulline (5000mg), Creatine (2500mg), Caffeine (200mg), L-Tyrosine (2500mg)", imageUrl: "https://gorillamind.com/cdn/shop/files/Mode_60oz_OrangeRush_mockup_011024_4166d67b-d1a4-4fc1-84c4-8dd38832cfef.png?v=1737567062&width=1445", productUrl: "https://gorillamind.com/products/gorilla-mode?variant=42200569446445" },
+      //   // Add all other products similarly
+      // ];
+
+      const form = document.getElementById('quizForm');
+      const steps = document.querySelectorAll('.step');
+      const prevBtn = document.getElementById('prevBtn');
+      const actionBtn = document.getElementById('actionBtn');
+      const navButtons = document.getElementById('navButtons');
+      const progress = document.getElementById('progress');
+      const stepIndicator = document.getElementById('stepIndicator');
+      const trainingTypeCheckboxes = document.querySelectorAll('input[name="trainingType"]');
+      const sportsSpecificSection = document.getElementById('sportsSpecificSection');
+      const sportsSpecific = document.getElementById('sportsSpecific');
+      const recommendationsDiv = document.getElementById('recommendations');
+      const loadingDiv = document.getElementById('loading');
+      let isSubmitting = false;
+      let currentStep = 0;
+      const totalSteps = 8;
+      
+      // Define required fields per step.
+      // "trainingType" is validated separately.
+      const requiredFields = {
+        0: [{ id: 'trainingRoutine', errorId: 'error-trainingRoutine' }],
+        1: [{ id: 'trainingFrequency', errorId: 'error-trainingFrequency' }],
+        2: [
+          { id: 'sleepHours', errorId: 'error-sleepHours' },
+          { id: 'stressLevel', errorId: 'error-stressLevel' },
+          { id: 'soreness', errorId: 'error-soreness' }
+        ],
+        3: [
+          { id: 'cognitiveInterest', errorId: 'error-cognitiveInterest' },
+          { id: 'cognitiveIssues', errorId: 'error-cognitiveIssues' },
+          { id: 'headImpact', errorId: 'error-headImpact' }
+        ],
+        4: [
+          { id: 'primaryGoal', errorId: 'error-primaryGoal' },
+          { id: 'healthConcerns', errorId: 'error-healthConcerns' }
+        ],
+        5: [{ id: 'dietType', errorId: 'error-dietType' }],
+        6: [
+          { id: 'userName', errorId: 'error-userName' },
+          { id: 'userEmail', errorId: 'error-userEmail' }
+        ]
+      };
+  
+      // Load saved state (answers, current step, and results if finished)
+      loadState();
+  
+      // Initialize quiz UI
+      showStep(currentStep);
+      updateButtonsState();
+      updateStepIndicator();
+  
+      // Navigation button events
+      prevBtn.addEventListener('click', () => {
+        if (currentStep > 0) {
+          currentStep--;
+          showStep(currentStep);
+          updateButtonsState();
+          updateStepIndicator();
+          saveState();
+        }
+      });
+  
+      actionBtn.addEventListener('click', () => {
+        if (!validateStep(currentStep)) return;
+        if (currentStep < totalSteps - 2) {
+          currentStep++;
+          showStep(currentStep);
+          updateButtonsState();
+          updateStepIndicator();
+          saveState();
+        } else if (currentStep === totalSteps - 2) {
+          form.dispatchEvent(new Event('submit'));
+        }
+      });
+  
+      // Add event listeners for all required fields
+      Object.values(requiredFields).flat().forEach(fieldObj => {
+        const element = document.getElementById(fieldObj.id);
+        if (element) {
+          element.addEventListener('input', () => {
+            validateField(fieldObj.id, fieldObj.errorId);
+            updateButtonsState();
+            saveState();
+          });
+          element.addEventListener('change', () => {
+            validateField(fieldObj.id, fieldObj.errorId);
+            updateButtonsState();
+            saveState();
+          });
+        }
+      });
+  
+      // Add event listener for sportsSpecific input
+      if (sportsSpecific) {
+        sportsSpecific.addEventListener('input', () => {
+          updateButtonsState();
+          saveState();
+        });
+      }
+  
+      // Special handling for trainingType checkboxes
+      trainingTypeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          const trainingTypeValid = Array.from(trainingTypeCheckboxes).some(cb => cb.checked);
+          const errorTrainingType = document.getElementById('error-trainingType');
+          if (!trainingTypeValid) {
+            errorTrainingType.classList.remove('hidden');
+          } else {
+            errorTrainingType.classList.add('hidden');
+          }
+          const sportsChecked = Array.from(trainingTypeCheckboxes).some(cb => cb.checked && cb.value === 'sports');
+          sportsSpecificSection.classList.toggle('hidden', !sportsChecked);
+          updateButtonsState();
+          saveState();
+        });
+      });
+  
+      // Validate individual field
+      function validateField(fieldId, errorId) {
+        const element = document.getElementById(fieldId);
+        const errorSpan = document.getElementById(errorId);
+        if (element) {
+          if (element.value.trim() === '') {
+            element.classList.add('invalid');
+            errorSpan.classList.remove('hidden');
+            return false;
+          } else {
+            element.classList.remove('invalid');
+            errorSpan.classList.add('hidden');
+            return true;
+          }
+        }
+        return true;
+      }
+  
+      // Validate current step
+      function validateStep(step) {
+        let valid = true;
+        (requiredFields[step] || []).forEach(fieldObj => {
+          if (!validateField(fieldObj.id, fieldObj.errorId)) {
+            valid = false;
+          }
+        });
+        // Special validation for step 1 (index 1): trainingType checkboxes.
+        if (step === 1) {
+          const trainingTypeValid = Array.from(trainingTypeCheckboxes).some(cb => cb.checked);
+          const errorTrainingType = document.getElementById('error-trainingType');
+          if (!trainingTypeValid) {
+            errorTrainingType.classList.remove('hidden');
+            valid = false;
+          } else {
+            errorTrainingType.classList.add('hidden');
+          }
+          const sportsChecked = Array.from(trainingTypeCheckboxes).some(cb => cb.checked && cb.value === 'sports');
+          if (sportsChecked && sportsSpecific.value.trim() === '') {
+            sportsSpecific.classList.add('invalid');
+            document.getElementById('error-sportsSpecific').classList.remove('hidden');
+            valid = false;
+          } else {
+            sportsSpecific.classList.remove('invalid');
+            document.getElementById('error-sportsSpecific').classList.add('hidden');
+          }
+        }
+        return valid;
+      }
+  
+      // Show the specified step and update progress
+      function showStep(step) {
+        steps.forEach((s, index) => {
+          if (index === step) {
+            s.classList.remove('hidden');
+            s.classList.add('active');
+          } else {
+            s.classList.add('hidden');
+            s.classList.remove('active');
+          }
+        });
+        updateProgress(step);
+      }
+  
+      // Update progress bar
+      function updateProgress(step) {
+        const percentage = ((step + 1) / totalSteps) * 100;
+        progress.style.width = `${percentage}%`;
+        progress.parentElement.setAttribute('aria-valuenow', percentage);
+      }
+  
+      // Update step indicator text
+      function updateStepIndicator() {
+        stepIndicator.textContent = `Step ${currentStep + 1} of ${totalSteps}`;
+      }
+  
+      // Update navigation buttons; hide on final step.
+      function updateButtonsState() {
+        if (currentStep === totalSteps - 1) {
+          navButtons.style.display = 'none';
+          return;
+        } else {
+          navButtons.style.display = 'flex';
+        }
+        prevBtn.disabled = currentStep === 0;
+        actionBtn.textContent = currentStep === totalSteps - 2 ? 'Get My Recommendations' : 'Next';
+        if (currentStep < totalSteps - 1) {
+          let allFilled = true;
+          (requiredFields[currentStep] || []).forEach(fieldObj => {
+            const element = document.getElementById(fieldObj.id);
+            if (!element || element.value.trim() === '') {
+              allFilled = false;
+            }
+          });
+          if (currentStep === 1) {
+            const trainingTypeValid = Array.from(trainingTypeCheckboxes).some(cb => cb.checked);
+            allFilled = allFilled && trainingTypeValid;
+            const sportsChecked = Array.from(trainingTypeCheckboxes).some(cb => cb.checked && cb.value === 'sports');
+            if (sportsChecked) {
+              allFilled = allFilled && sportsSpecific.value.trim() !== '';
+            }
+          }
+          actionBtn.disabled = !allFilled;
+        } else {
+          actionBtn.disabled = true;
+        }
+      }
+  
+      // Save state to localStorage (including quiz results on final step)
+      function saveState() {
+        const state = { currentStep: currentStep, answers: {} };
+        const elements = form.querySelectorAll('input, select, textarea');
+        elements.forEach(el => {
+          if (el.id) {
+            if (el.type === 'checkbox') {
+              // Handled below.
+            } else {
+              state.answers[el.id] = el.value;
+            }
+          }
+        });
+        const trainingType = Array.from(document.querySelectorAll('input[name="trainingType"]')).filter(cb => cb.checked).map(cb => cb.value);
+        state.answers['trainingType'] = trainingType;
+        if (currentStep === totalSteps - 1 && recommendationsDiv.innerHTML.trim() !== '') {
+          state.results = recommendationsDiv.innerHTML;
+        }
+        localStorage.setItem('quizState', JSON.stringify(state));
+      }
+  
+      // Load state from localStorage
+      function loadState() {
+        const saved = localStorage.getItem('quizState');
+        if (saved) {
+          const state = JSON.parse(saved);
+          currentStep = state.currentStep || 0;
+          for (const key in state.answers) {
+            if (key === 'trainingType') {
+              const values = state.answers[key];
+              const checkboxes = document.querySelectorAll('input[name="trainingType"]');
+              checkboxes.forEach(cb => {
+                cb.checked = values.includes(cb.value);
+              });
+            } else {
+              const el = document.getElementById(key);
+              if (el) {
+                el.value = state.answers[key];
+              }
+            }
+          }
+          if (currentStep === totalSteps - 1 && state.results) {
+            recommendationsDiv.innerHTML = state.results;
+            loadingDiv.style.display = 'none';
+          }
+        }
+      }
+  
+      // Form submission handler
+      form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        if (isSubmitting) return;
+        isSubmitting = true;
+        currentStep = totalSteps - 1;
+        showStep(currentStep);
+        updateButtonsState();
+        updateStepIndicator();
+        recommendationsDiv.innerHTML = '';
+        loadingDiv.style.display = 'block';
+        saveState();
+        const answers = gatherAnswers();
+        if (!answers.userName || !answers.userEmail) {
+          alert("Please provide your name and email.");
+          isSubmitting = false;
+          loadingDiv.style.display = 'none';
+          return;
+        }
+        const prompt = buildPrompt(answers);
+        fetchRecommendations(prompt, answers.userName);
+      });
+  
+      // Gather answers from form fields
+      function gatherAnswers() {
+        return {
+          trainingRoutine: document.getElementById('trainingRoutine').value || "N/A",
+          trainingFrequency: document.getElementById('trainingFrequency').value || "N/A",
+          trainingType: Array.from(trainingTypeCheckboxes).filter(cb => cb.checked).map(cb => cb.value).join(', ') || "N/A",
+          sportsSpecific: sportsSpecific.value || "N/A",
+          performanceGoals: document.getElementById('performanceGoals').value || "N/A",
+          sleepHours: document.getElementById('sleepHours').value || "N/A",
+          stressLevel: document.getElementById('stressLevel').value || "N/A",
+          soreness: document.getElementById('soreness').value || "N/A",
+          cognitiveInterest: document.getElementById('cognitiveInterest').value || "N/A",
+          cognitiveIssues: document.getElementById('cognitiveIssues').value || "N/A",
+          headImpact: document.getElementById('headImpact').value || "N/A",
+          currentNootropics: document.getElementById('currentNootropics').value || "N/A",
+          primaryGoal: document.getElementById('primaryGoal').value || "N/A",
+          specificGoals: document.getElementById('specificGoals').value || "N/A",
+          healthConcerns: document.getElementById('healthConcerns').value || "N/A",
+          dietType: document.getElementById('dietType').value || "N/A",
+          currentSupplements: document.getElementById('currentSupplements').value || "N/A",
+          avoidSupplements: document.getElementById('avoidSupplements').value || "N/A",
+          userName: document.getElementById('userName').value.trim(),
+          userEmail: document.getElementById('userEmail').value.trim()
+        };
+      }
+  
+      // Build the prompt for the API call using the products array
+      function buildPrompt(answers) {
+        const productList = products.map(p => `- ${p.name} (${p.type}): ${p.effects} with ingredients: ${p.ingredients}`).join('\n');
+        return `You are a Gorilla Mind supplement expert tasked with recommending only Gorilla Mind products based on the user’s profile. Recommend 2-3 specific supplements from the following list, tailored to the user’s needs, goals, and lifestyle. For each, provide a clear justification.\n\nAvailable supplements:\n${productList}\n\nUser Profile:\n- Training Routine: ${answers.trainingRoutine}\n  - Training Frequency: ${answers.trainingFrequency}\n  - Training Type: ${answers.trainingType}\n  - Sports Specific: ${answers.sportsSpecific}\n  - Performance Goals: ${answers.performanceGoals}\n- Recovery:\n  - Sleep: ${answers.sleepHours}\n  - Stress Level: ${answers.stressLevel}\n  - Muscle Soreness/Fatigue: ${answers.soreness}\n- Cognitive Health:\n  - Interest in Improvement: ${answers.cognitiveInterest}\n  - Cognitive Issues: ${answers.cognitiveIssues}\n  - Head Impacts: ${answers.headImpact}\n  - Current Nootropics: ${answers.currentNootropics}\n- Health and Fitness Goals:\n  - Primary Goal: ${answers.primaryGoal}\n  - Specific Goals: ${answers.specificGoals}\n  - Health Concerns: ${answers.healthConcerns}\n- Diet and Supplements:\n  - Diet Type: ${answers.dietType}\n  - Current Supplements: ${answers.currentSupplements}\n  - Supplements/Ingredients to Avoid: ${answers.avoidSupplements}\n- User Info:\n  - Name: ${answers.userName}\n  - Email: ${answers.userEmail}\n\nResponse format:\n1. [Supplement Name]: [Justification]\n2. [Supplement Name]: [Justification]\n3. [Supplement Name]: [Justification]`;
+      }
+  
+      // Fetch recommendations from OpenAI
+      function fetchRecommendations(prompt, userName) {
+        const OPENAI_API_KEY = "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"; // Secure your API key in production.
+        fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [
+              { role: "system", content: "You are a helpful assistant." },
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 300,
+            temperature: 0.7
+          })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          const recommendationText = data.choices[0].message.content.trim();
+          const lines = recommendationText.split('\n').filter(line => line.trim());
+          renderRecommendations(lines, userName);
+          isSubmitting = false;
+          loadingDiv.style.display = 'none';
+          // Save the rendered results so they persist
+          saveState();
+        })
+        .catch(error => {
+          recommendationsDiv.innerHTML = `<p class="error-message" role="alert">Error: Could not get recommendations. ${error.message}</p>`;
+          isSubmitting = false;
+          loadingDiv.style.display = 'none';
+        });
+      }
+  
+      // Render recommendations in Step 8 and add a Reload Quiz button
+      function renderRecommendations(lines, userName) {
+        let html = `<p>Here are your tailored Gorilla Mind supplement recommendations, ${userName}:</p>`;
+        lines.forEach(line => {
+          const match = line.match(/^\d+\.\s*(?:\[\s*(.*?)\s*\]|\s*(.*?)):\s*(.*)$/);
+          if (match) {
+            const fullName = (match[1] || match[2]).trim();
+            const supplementName = fullName.split('(')[0].trim();  // Extract base name before parentheses
+            const justification = match[3].trim();
+            const imageUrl = getImageUrl(supplementName);
+            const productUrl = getLinkUrl(supplementName);
+            console.log(`Supplement: ${supplementName}, Image URL: ${imageUrl}`);  // Debug log
+            html += `
+              <div class="recommendation">
+                <p><strong>${supplementName}</strong>: ${justification}</p>
+                <img src="${imageUrl}" alt="${supplementName}">
+                <a href="${productUrl}" target="_blank">Learn More About ${supplementName}</a>
+              </div>
+            `;
+          }
+        });
+        // Append Reload Quiz button for testing purposes.
+        html += `<button id="reloadQuiz" class="step-btn">Reload Quiz</button>`;
+        recommendationsDiv.innerHTML = html || "<p>No valid recommendations received.</p>";
+        const reloadBtn = document.getElementById('reloadQuiz');
+        if (reloadBtn) {
+          reloadBtn.addEventListener('click', () => {
+            localStorage.removeItem('quizState');
+            location.reload();
+          });
+        }
+      }
+  
+      // Get image URL from products array
+      function getImageUrl(supplementName) {
+        const product = products.find(p => p.name.toLowerCase() === supplementName.toLowerCase());
+        return product ? product.imageUrl : "https://via.placeholder.com/200?text=Supplement+Image";
+      }
+  
+      // Get product URL from products array
+      function getLinkUrl(supplementName) {
+        const product = products.find(p => p.name.toLowerCase() === supplementName.toLowerCase());
+        return product ? product.productUrl : "https://gorillamind.com";
+      }
+    });
+  </script>
+</body>
+</html>
